@@ -8,7 +8,8 @@ with sync_playwright() as p:
  page=b.new_page(viewport={'width':390,'height':844},device_scale_factor=2,is_mobile=True,has_touch=True)
  page.set_content((P/'site-ready/index.html').read_text()); page.wait_for_timeout(500)
  got=page.evaluate('window.ShadowMorph && window.ShadowMorph.version')
- assert got=='7.0.0',f'Expected playable V7 platform build; got {got}'
+ expected=json.loads((P/'package.json').read_text())['version']
+ assert got==expected,f'Expected playable version {expected}; got {got}'
  page.locator('#stagesBtn').click()
  assert page.locator('.stage-card[data-stage]').count()==19,'Expected 19 rooms'
  b.close()

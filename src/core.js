@@ -257,7 +257,14 @@
       candidate.updateWorld(false);if(collides(candidate.level,candidate.state)||candidate.level.platforms.some(p=>!platformGeometryValid(candidate.level,candidate.state,p)))return false;
       candidate.state.won=!!s.won&&canWin(candidate.level,candidate.state);
       for(const key of ['activeShadow','activeLight'])candidate[key]=Number.isInteger(data[key])?clamp(data[key],0,candidate.lights.length-1):0;
-      candidate.setInputMode(data.inputMode);if(data.version===7&&candidate.level.platforms.some(p=>p.id===data.target))candidate.setTarget(data.target);this.customLevel=null;this.index=candidate.index;this._level=candidate._level;
+      candidate.setInputMode(data.inputMode);
+      // A saved box target is explicit: do not replace it with the room's
+      // tutorial default deck when continuing a previously started game.
+      if(candidate.inputMode==='shadow'){
+        const savedTarget=data.version===7&&candidate.level.platforms.some(p=>p.id===data.target)?data.target:'box';
+        candidate.setTarget(savedTarget);
+      }
+      this.customLevel=null;this.index=candidate.index;this._level=candidate._level;
       this.state=candidate.state;this.lights=candidate.lights;this.activeShadow=candidate.activeShadow;this.activeLight=candidate.activeLight;this.inputMode=candidate.inputMode;this.target=candidate.target;this.history=[];this.before=null;this.events=[];return true;
     }
   }

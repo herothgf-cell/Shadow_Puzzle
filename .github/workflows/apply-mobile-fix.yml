@@ -1,0 +1,28 @@
+name: Apply verified mobile compatibility fixes
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/apply-mobile-fix.yml']
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+      - name: Apply exact source patch
+        run: node tools/apply-mobile-fix.cjs
+      - name: Verify all game tests
+        run: npm test
+      - name: Commit tested changes and remove one-time helper
+        run: |
+          set -eu
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/core.js tests/hosting_browser.py tests/driver_probe.py tests/light-alignment.test.cjs docs/MOBILE_FIXES.md
+          git rm tools/apply-mobile-fix.cjs .github/workflows/apply-mobile-fix.yml
+          git commit -m 'fix: assist cardinal light placement and verify native input contexts'
+          git push origin HEAD:main

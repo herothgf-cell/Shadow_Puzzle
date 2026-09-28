@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import threading
 from playwright.sync_api import sync_playwright
+from driver_probe import probe_firefox_inputs
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'qa'
@@ -73,7 +74,7 @@ def snap(page):
 
 def boot(browser, width=393, height=852, touch=True, blocked_storage=False, no_js=False):
     opts = dict(viewport={'width': width, 'height': height}, device_scale_factor=2 if touch else 1,
-                has_touch=touch, java_script_enabled=not no_js)
+                has_touch=touch and args.engine != 'firefox', java_script_enabled=not no_js)
     if args.engine != 'firefox':
         opts['is_mobile'] = touch
     context = browser.new_context(**opts)
@@ -115,7 +116,7 @@ def pad(page, dx, dy):
     if snap(page)['active'] != 'move':
         page.mouse.up()
         input_failure(page, 'Pointer-down did not begin a pad gesture')
-    page.mouse.move(x+dx, y+dy, steps=2)
+    page.mouse.move(x+round(dx), y+round(dy), steps=2)
     settled(page)
     page.mouse.up()
     settled(page)
@@ -162,7 +163,7 @@ def light_to(page, i, x, y):
     for _ in range(60):
         before = snap(page)['lights'][i]
         distance = math.hypot(x-before['x'], y-before['y'])
-        if distance <= 1:
+        if distance <= 2:
             set_fine(page, previous_fine)
             return
         fine = distance < 24
@@ -206,6 +207,8 @@ try:
             launch['args'] = ['--no-sandbox']
         browser = getattr(pw, args.engine).launch(**launch)
         try:
+            if args.engine == 'firefox':
+                probe_firefox_inputs(browser, OUT)
             sizes = [(393,852),(1365,768)] if args.smoke else [(320,568),(360,640),(393,852),(844,390),(768,1024),(1365,768),(1920,1080)]
             for w, h in sizes:
                 c, p, errors = boot(browser, w, h, touch=w<1000)

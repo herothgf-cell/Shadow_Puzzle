@@ -141,6 +141,17 @@
     begin(){if(!this.before&&!this.state.won)this.before=this.snapshot();}
     end(){
       if(!this.before)return false;const before=this.before;this.before=null;
+      // Touch/mouse coordinates can be quantized to CSS pixels. At release,
+      // align a MOVED light near a cardinal axis; leave diagonal intent intact.
+      if(this.level.axisMovement&&this.inputMode==='light'){
+        const l=this.lights[this.activeLight],b=before.lights[this.activeLight];
+        if(l?.movable&&b&&Math.hypot(l.x-b.x,l.y-b.y)>EPS){
+          const limits=l.bounds||{x1:60,y1:60,x2:940,y2:940};
+          if(Math.abs(l.x-this.state.x)<=12&&Math.abs(l.y-this.state.y)>=40&&this.state.x>=limits.x1&&this.state.x<=limits.x2)l.x=this.state.x;
+          if(Math.abs(l.y-this.state.y)<=12&&Math.abs(l.x-this.state.x)>=40&&this.state.y>=limits.y1&&this.state.y<=limits.y2)l.y=this.state.y;
+          this.updateWorld();
+        }
+      }
       if(JSON.stringify(before)===JSON.stringify(this.snapshot()))return false;
       this.history.push(before);if(this.history.length>100)this.history.shift();this.state.moves=before.state.moves+1;
       if(canWin(this.level,this.state))this.state.won=true;return true;

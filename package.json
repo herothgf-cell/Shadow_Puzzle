@@ -1,0 +1,15 @@
+{
+  "name": "shadow-puzzle",
+  "version": "7.1.0",
+  "private": true,
+  "scripts": {
+    "build": "node build.cjs",
+    "test": "node --test tests/*.test.cjs",
+    "test:browser": "python tests/browser_smoke.py && python tests/browser_full.py && python tests/browser_labels.py && python tests/browser_platforms.py && python tests/browser_target_overlap.py",
+    "test:hosting": "python tests/hosting_browser.py",
+    "serve": "python -m http.server 8000 --directory site-ready"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

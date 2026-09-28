@@ -1,0 +1,7 @@
+site-ready/
+shadow_morph_v7_platforms.html
+qa/
+__pycache__/
+.venv/
+node_modules/
+.DS_Store

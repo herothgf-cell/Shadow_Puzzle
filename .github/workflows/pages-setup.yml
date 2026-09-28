@@ -1,0 +1,35 @@
+name: Pages setup
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/pages-setup.yml']
+permissions:
+  contents: read
+  pages: write
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Configure requested Pages site
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -eu
+          if gh api "repos/$REPOSITORY/pages" > pages.json 2> pages-error.txt; then
+            cat pages.json
+            echo 'Pages is already enabled.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            if gh api --method POST "repos/$REPOSITORY/pages" -f build_type=workflow > pages.json 2> pages-create-error.txt; then
+              cat pages.json
+              echo 'Pages enabled for GitHub Actions deployment.' >> "$GITHUB_STEP_SUMMARY"
+            else
+              cat pages-create-error.txt
+              echo "::error::First-time Pages enablement requires repository Settings > Pages > Source: GitHub Actions."
+              echo "Open https://github.com/$REPOSITORY/settings/pages and select GitHub Actions. No token needs to be shared." >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+          fi

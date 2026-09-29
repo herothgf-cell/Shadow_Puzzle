@@ -2,7 +2,7 @@ const test=require('node:test'),assert=require('node:assert/strict'),C=require('
 test('migrate unchanged deck room by stable ID instead of its former number',()=>{
  const old=new V7.Game(14);old.begin();old.setPlatformLength('deck-a',430);old.setTarget('box');old.end();
  const save=old.serialize(),g=new C.Game();assert.equal(g.restore(save),true);
- assert.equal(g.level.id,old.level.id);assert.equal(g.index,6);assert.deepEqual(g.state,old.state);assert.equal(g.target,'box');
+ assert.equal(g.level.id,old.level.id);assert.equal(g.index,C.LEVELS.findIndex(l=>l.id===old.level.id));assert.deepEqual(g.state,old.state);assert.equal(g.target,'box');
 });
 test('removed rooms are not silently assigned to their old stage number',()=>{
  const old=new V7.Game(5),g=new C.Game(2),before=g.serialize();assert.equal(g.restore(old.serialize()),false);assert.deepEqual(g.serialize(),before);

@@ -8,6 +8,7 @@ ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/'qa';OUT.mkdir(exist_ok=True)
 PKG=json.loads((ROOT/'package.json').read_text())
 ROUTES=json.loads((ROOT/'tests/campaign40-solutions.json').read_text())
+def room_id(id):return next(i+1 for i,r in enumerate(ROUTES) if r['levelId']==id)
 parser=argparse.ArgumentParser()
 parser.add_argument('--engine',choices=['chromium','webkit','firefox'],default='chromium')
 parser.add_argument('--base-url');parser.add_argument('--smoke',action='store_true')
@@ -152,12 +153,12 @@ def run():
    version=json.loads((ROOT/'site-ready/version.json').read_text()) if args.fixture else p.evaluate("()=>fetch('version.json',{cache:'no-store'}).then(r=>r.json())")
    check('build identity (fixture)' if args.fixture else 'served campaign identity',version['stages']==40 and version['version']==PKG['version'],version)
    if args.base_url and os.getenv('EXPECTED_SHA'):check('published commit matches main build',version['commit']==os.environ['EXPECTED_SHA'],version)
-   stages=[1,17,26,33,39,40] if args.smoke else range(args.from_stage,41)
+   stages=[1,5,11,12,23,29,35,37,38,39,40] if args.smoke else range(args.from_stage,41)
    for n in stages:
     pick(p,n);route(p,ROUTES[n-1]['steps'])
     check(f'room {n} cleared using actual UI',snap(p)['state']['won']);check(f'room {n} completion visible',p.locator('#winDialog').is_visible())
-   pick(p,34);p.locator('[data-target="deck-a"]').click();range_to(p,100);check('worksite deck gives reachable work-area feedback','작업 자리' in p.locator('#objective').inner_text())
-   pick(p,39);route(p,ROUTES[38]['alternateSteps']);check('39 alternate preparation order clears',snap(p)['state']['won'])
+   pick(p,6);range_to(p,100);check('deck feedback responds to physical connection','연결 완료' in p.locator('#objective').inner_text())
+   alt=room_id('campaign40-39');pick(p,alt);route(p,ROUTES[alt-1]['alternateSteps']);check('independent preparation order still clears after reorder',snap(p)['state']['won'])
    pick(p,40);p.locator('[data-light="1"]').click();check('deck room can select second shadow',snap(p)['activeShadow']==1)
    p.locator('[data-target="deck-a"]').click();range_to(p,-90);p.locator('[data-target="box"]').click()
    before=snap(p)
@@ -167,7 +168,7 @@ def run():
    p.set_viewport_size(dict(width=844,height=390));frames(p);check('rotation keeps puzzle state',snap(p)['state']==rest['state'])
    check('active campaign no runtime errors',not errors,errors);c.close()
    c,p,errors=boot(b,1365,768,False)
-   for n in ([26] if args.smoke else [17,26,33,40]):
+   for n in ([26] if args.smoke else [5,11,12,23,29,35,37,40]):
     pick(p,n);route(p,ROUTES[n-1]['steps']);check(f'PC room {n} actual input route',snap(p)['state']['won'])
    pick(p,1);p.locator('#touchpad').focus();s=snap(p)['state'];p.keyboard.down('ArrowRight');p.wait_for_timeout(200);p.keyboard.up('ArrowRight');check('PC held arrow moves',snap(p)['state']['x']>s['x']+5)
    p.keyboard.press('z');check('PC Z restores gesture',abs(snap(p)['state']['x']-s['x'])<.01)
@@ -184,7 +185,7 @@ def run():
     old={'game':None,'completed':[0,5,14],'fine':True}
     c,p,errors=boot(b,legacy=old);stored=p.evaluate("JSON.parse(localStorage.getItem('shadow-morph-campaign40-v8'))");unchanged=p.evaluate("JSON.parse(localStorage.getItem('shadow-morph-v7-platforms'))")
     check('legacy completion IDs migrate without rewriting original',len(stored['completedIds'])==3 and unchanged==old)
-    p.locator('#stagesBtn').click();check('all40 thumbnails present',p.locator('.stage-card').count()==40);check('old deck completion follows ID into stage7',p.locator('[data-stage="7"] .check').is_visible());c.close()
+    p.locator('#stagesBtn').click();check('all40 thumbnails present',p.locator('.stage-card').count()==40);check('old deck completion follows ID into stage6',p.locator('[data-stage="6"] .check').is_visible());c.close()
   finally:b.close()
 try:run()
 finally:

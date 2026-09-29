@@ -269,7 +269,10 @@
       }
       // Persist only the anti-crush hold of a previously open gate.
       for(const d of candidate.level.devices)if(s.devices?.[d.id]===true&&overlap(rect(candidate.state),wallRect(d)))candidate.state.devices[d.id]=true;
-      candidate.updateWorld(false);if(collides(candidate.level,candidate.state)||candidate.level.platforms.some(p=>!platformGeometryValid(candidate.level,candidate.state,p)))return false;
+      // A live gate may close over a previously grown floor. Restore validates
+      // permanent stone/bounds for decks, and the actual CLOSED gate for the box.
+      // Reopening a gate is still derived only from sensors/anti-crush state.
+      candidate.updateWorld(false);if(collides(candidate.level,candidate.state)||candidate.level.platforms.some(p=>!platformGeometryValid({...candidate.level,devices:[]},candidate.state,p)))return false;
       candidate.state.won=!!s.won&&canWin(candidate.level,candidate.state);
       for(const key of ['activeShadow','activeLight'])candidate[key]=Number.isInteger(data[key])?clamp(data[key],0,candidate.lights.length-1):0;
       candidate.setInputMode(data.inputMode);

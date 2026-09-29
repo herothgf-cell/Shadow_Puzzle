@@ -4,3 +4,5 @@ shadow_morph*.html
 __pycache__/
 node_modules/
 .superpowers/
+
+.work/

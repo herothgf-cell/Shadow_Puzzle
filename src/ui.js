@@ -11,7 +11,7 @@
  try {
   const raw=P.read(localStorage);fine=raw.fine;completed=new Set(raw.completedIds);game.restore(raw.game);
  }catch(_){storageOK=false;}
- function save(){try{localStorage.setItem(KEY,JSON.stringify({game:game.serialize(),fine,completedIds:[...completed]}));storageOK=true;}catch(_){storageOK=false;}$('saveNote').textContent=storageOK?'40개 방의 진행을 방 ID로 저장해요. 이전과 같은 방은 이어받고 V6/V7 저장은 그대로 남겨요.':'이 환경에서는 저장이 제한돼요. 현재 게임은 플레이할 수 있지만 닫으면 진행이 사라질 수 있어요.';}
+ function save(){try{localStorage.setItem(KEY,JSON.stringify({game:game.serialize(),fine,completedIds:[...completed]}));storageOK=true;}catch(_){storageOK=false;}$('saveNote').textContent=storageOK?'40개 방의 진행을 방 ID로 저장해요. 같은 방은 새 번호로 이어받고, 교체된 방에는 이전 완료를 붙이지 않아요.':'이 환경에서는 저장이 제한돼요. 현재 게임은 플레이할 수 있지만 닫으면 진행이 사라질 수 있어요.';}
  function message(text,type=''){$('status').textContent=text;$('status').className='status-line '+type;}
  function deckFeedback(p){
   const info=C.platformInfo(p,game.state);
@@ -264,7 +264,7 @@
  document.addEventListener('click',e=>{
   if(e.isTrusted&&(e.pointerType==='touch'||e.detail>0)&&lastTap&&performance.now()-lastTap.time<650&&e.target.closest('button')===lastTap.b){e.preventDefault();e.stopImmediatePropagation();}
  },true);
- $('newRoomsBtn').onclick=()=>load(16);$('stagesBtn').onclick=stagePicker;$('helpBtn').onclick=()=>dialogOpen('helpDialog');$('hintBtn').onclick=()=>{dialogOpen('helpDialog');$('hintText').scrollIntoView({block:'center'});};
+ $('newRoomsBtn').onclick=()=>load(C.LEVELS.findIndex(l=>l.lights.length>1));$('stagesBtn').onclick=stagePicker;$('helpBtn').onclick=()=>dialogOpen('helpDialog');$('hintBtn').onclick=()=>{dialogOpen('helpDialog');$('hintText').scrollIntoView({block:'center'});};
  document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>closeDialog(b.closest('dialog')));$('nextBtn').onclick=()=>game.index===C.LEVELS.length-1?stagePicker():load(game.index+1);$('replayBtn').onclick=()=>load(game.index);
  function keyTick(time){
   if(!keys.size){keyFrame=0;return;}const dt=Math.min(.035,(time-keyTime)/1000||.016);keyTime=time;
@@ -277,6 +277,6 @@
  window.addEventListener('keyup',e=>{keys.delete(e.key.toLowerCase());if(!keys.size&&active?.type==='keyboard')stopInput();});
  window.addEventListener('blur',stopInput);document.addEventListener('visibilitychange',()=>{if(document.hidden)stopInput();});window.addEventListener('pagehide',()=>{stopInput();save();});window.addEventListener('resize',()=>{stopInput();fitBoard();});if(window.visualViewport)window.visualViewport.addEventListener('resize',fitBoard);if(window.ResizeObserver)new ResizeObserver(fitBoard).observe($('boardStage'));
  // Read-only QA surface: test tools cannot mutate live game state through it.
- window.ShadowMorph=Object.freeze({version:'8.0.0',snapshot:()=>({index:game.index,...game.snapshot(),historyLength:game.history.length,fine,storageOK,active:active?.type||null,ready:$('boardShell').classList.contains('ready')}),levels:()=>C.LEVELS.map(l=>({id:l.id,name:l.name,tag:l.tag}))});
+ window.ShadowMorph=Object.freeze({version:'8.1.0',snapshot:()=>({index:game.index,...game.snapshot(),historyLength:game.history.length,fine,storageOK,active:active?.type||null,ready:$('boardShell').classList.contains('ready')}),levels:()=>C.LEVELS.map(l=>({id:l.id,name:l.name,tag:l.tag}))});
  try{const entry=Number(new URLSearchParams(location.search).get('stage'));if(Number.isInteger(entry)&&entry>=1&&entry<=C.LEVELS.length)game.load(entry-1);save();sync();fitBoard();requestAnimationFrame(fitBoard);if(game.state.won)showWin();}catch(e){fail(e);}
 })();

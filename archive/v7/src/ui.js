@@ -1,21 +1,21 @@
-/* V8 campaign UI. No dependencies, telemetry, network calls, or gameplay timers. */
+/* V7 touch UI. No dependencies, telemetry, network calls, or gameplay timers. */
 (() => {
  'use strict';
  const $=id=>document.getElementById(id),C=window.ShadowCore;
  const canvas=$('board'),ctx=canvas.getContext('2d'),pad=$('touchpad'),slider=$('shapeSlider');
- const P=window.ShadowProgress,KEY=P.KEY,game=new C.Game();
+ const KEY='shadow-morph-v7-platforms',LEGACY_KEY='shadow-morph-v6-rebuild',game=new C.Game();
  let completed=new Set(),fine=false,storageOK=true,active=null,pending=0,keyFrame=0,keyTime=0;
  let effects=new Map(),lastPickIndex=-1;const keys=new Set(),dialogs=[...document.querySelectorAll('dialog')];
  const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
  function fail(error){$('bootNotice').innerHTML='<strong>게임을 초기화하지 못했어요</strong><span>파일 미리보기가 아닌 웹페이지에서 다시 열어주세요. 오류: </span>';$('bootNotice').lastChild.textContent+=''+(error.message||error);$('boardShell').classList.remove('ready');console.error(error);}
  try {
-  const raw=P.read(localStorage);fine=raw.fine;completed=new Set(raw.completedIds);game.restore(raw.game);
+  const raw=JSON.parse(localStorage.getItem(KEY)||localStorage.getItem(LEGACY_KEY)||'null');
+  if(raw&&game.restore(raw.game)){fine=!!raw.fine;completed=new Set((Array.isArray(raw.completed)?raw.completed:[]).filter(i=>Number.isInteger(i)&&i>=0&&i<C.LEVELS.length));}
  }catch(_){storageOK=false;}
- function save(){try{localStorage.setItem(KEY,JSON.stringify({game:game.serialize(),fine,completedIds:[...completed]}));storageOK=true;}catch(_){storageOK=false;}$('saveNote').textContent=storageOK?'40개 방의 진행을 방 ID로 저장해요. 이전과 같은 방은 이어받고 V6/V7 저장은 그대로 남겨요.':'이 환경에서는 저장이 제한돼요. 현재 게임은 플레이할 수 있지만 닫으면 진행이 사라질 수 있어요.';}
+ function save(){try{localStorage.setItem(KEY,JSON.stringify({game:game.serialize(),fine,completed:[...completed]}));storageOK=true;}catch(_){storageOK=false;}$('saveNote').textContent=storageOK?'V7 진행을 이 브라우저에 저장해요. V6의 같은 방 진행은 이어받고 이전 저장은 그대로 남겨요.':'이 환경에서는 저장이 제한돼요. 현재 게임은 플레이할 수 있지만 닫으면 진행이 사라질 수 있어요.';}
  function message(text,type=''){$('status').textContent=text;$('status').className='status-line '+type;}
  function deckFeedback(p){
   const info=C.platformInfo(p,game.state);
-  if(p.purpose==='worksite')return !info.connected?`${p.name} · 작업 지점까지 펼쳐 보세요`:!info.fits?`${p.name} · 작업면 폭과 상자 형태를 확인하세요`:`${p.name} · 작업 자리 확보, 상자를 선택해 이동하세요`;
   if(!info.connected)return `${p.name}이 짧아요 · 양쪽 땅까지 늘려 보세요`;
   if(!info.fits)return `${p.name}은 연결됐지만 상자가 설 폭이 좁아요`;
   return `${p.name} 연결 완료 · 상자를 선택해 건너세요`;
@@ -26,7 +26,6 @@
   save();sync();requestAnimationFrame(fitBoard);
  }
  function objective(){
-  if(game.level.objective&&!game.selectedPlatform())return game.level.objective;
   if(game.selectedPlatform())return deckFeedback(game.selectedPlatform());
   const off=game.level.devices.find(d=>!game.deviceOpen(d.id));
   if(off){const c=game.level.sensors.find(c=>c.id===off.sensorId);return `${c.accept==='box'?'상자 → ○ 버튼':'그림자 → '+(c.w?'그늘판':'◇ 장치')} → ${off.type==='bridge'?'다리 펼치기':'문 열기'}`;}
@@ -47,10 +46,7 @@
   slider.disabled=game.inputMode==='light'||(!platform&&!game.level.allowMorph);
   document.querySelectorAll('.preset').forEach((b,i)=>{b.disabled=slider.disabled;const on=platform?Math.abs(value-[-100,0,100][i])<1:Math.abs(Math.log(Number(b.dataset.aspect)/game.state.a))<.04;b.classList.toggle('selected',on);b.setAttribute('aria-pressed',String(on));b.querySelector('.preset-label').textContent=platform?['짧게','중간','길게'][i]:['세로','기본','가로'][i];});
   const movable=game.lights.some(l=>l.movable),multi=game.lights.length>1;
-  $('modeRow').hidden=hasPlatforms?!multi:(!movable&&!multi);
-  $('modeRow').querySelector('.mode-toggle').hidden=hasPlatforms;
-  $('modeLight').hidden=!movable;
-  $('modeRow').classList.toggle('lights-only',hasPlatforms);
+  $('modeRow').hidden=hasPlatforms||(!movable&&!multi);$('modeLight').hidden=!movable;
   $('modeShadow').classList.toggle('active',game.inputMode==='shadow');$('modeShadow').setAttribute('aria-pressed',String(game.inputMode==='shadow'));
   $('modeLight').classList.toggle('active',game.inputMode==='light');$('modeLight').setAttribute('aria-pressed',String(game.inputMode==='light'));
   $('objectRow').hidden=!hasPlatforms;
@@ -193,7 +189,7 @@
  function dialogOpen(id){stopInput();dialogs.forEach(d=>{if(d.open)closeDialog(d);});const d=$(id);if(typeof d.showModal==='function')d.showModal();else{d.setAttribute('open','');d.classList.add('fallback-modal');}}
  function closeDialog(d){if(typeof d.close==='function')d.close();else d.removeAttribute('open');}
  const hasDialog=()=>dialogs.some(d=>d.open);
- function showWin(){completed.add(game.level.id);save();$('winEyebrow').textContent=`STAGE ${String(game.index+1).padStart(2,'0')} CLEAR`;$('winTitle').textContent=game.index===C.LEVELS.length-1?'40개의 세계를 완성했어요.':'이번 방에서 달라진 것';$('winText').textContent=game.level.meaning;$('nextBtn').textContent=game.index===C.LEVELS.length-1?'모든 방 다시 보기 →':'다음 방 →';dialogOpen('winDialog');}
+ function showWin(){completed.add(game.index);save();$('winEyebrow').textContent=`STAGE ${String(game.index+1).padStart(2,'0')} CLEAR`;$('winTitle').textContent=game.index===C.LEVELS.length-1?'내 손으로 길을 만들었어요.':'이번 방에서 달라진 것';$('winText').textContent=game.level.meaning;$('nextBtn').textContent=game.index===C.LEVELS.length-1?'모든 방 다시 보기 →':'다음 방 →';dialogOpen('winDialog');}
  function finish(){if(!active&&!game.before)return;active=null;pad.classList.remove('active');$('padKnob').style.transform='';game.end();save();sync();if(game.state.won&&!$('winDialog').open)showWin();}
  function stopInput(){keys.clear();if(keyFrame)cancelAnimationFrame(keyFrame);keyFrame=0;if(active||game.before)finish();}
  function load(i){stopInput();dialogs.forEach(d=>{if(d.open)closeDialog(d);});game.load(i);effects.clear();lastPickIndex=-1;message(game.level.tip);save();sync();requestAnimationFrame(fitBoard);}
@@ -246,7 +242,7 @@
  $('resetBtn').onclick=()=>load(game.index);$('fineBtn').onclick=()=>{fine=!fine;message(fine?'정밀 ON · 천천히 움직여요.':'기본 속도로 움직여요.');save();sync();};
  function stagePicker(){
   const grid=$('stageGrid');grid.replaceChildren();let chapter='';
-  C.LEVELS.forEach((l,i)=>{if(l.chapter!==chapter){chapter=l.chapter;const title=document.createElement('div');title.className='chapter-row';title.textContent=chapter;grid.appendChild(title);}const b=document.createElement('button');b.className='stage-card'+(i===game.index?' current':'');b.dataset.stage=String(i+1);b.innerHTML=`<canvas width="240" height="240" aria-hidden="true"></canvas><b>${String(i+1).padStart(2,'0')}</b><span>${l.name}</span><small>${l.tag}</small>${completed.has(l.id)?'<i class="check">✓</i>':''}`;b.onclick=()=>load(i);grid.appendChild(b);const cv=b.querySelector('canvas');renderScene(cv.getContext('2d'),cv,new C.Game(i),0,true);});dialogOpen('stageDialog');
+  C.LEVELS.forEach((l,i)=>{if(l.chapter!==chapter){chapter=l.chapter;const title=document.createElement('div');title.className='chapter-row';title.textContent=chapter;grid.appendChild(title);}const b=document.createElement('button');b.className='stage-card'+(i===game.index?' current':'');b.dataset.stage=String(i+1);b.innerHTML=`<canvas width="240" height="240" aria-hidden="true"></canvas><b>${String(i+1).padStart(2,'0')}</b><span>${l.name}</span><small>${l.tag}</small>${completed.has(i)?'<i class="check">✓</i>':''}`;b.onclick=()=>load(i);grid.appendChild(b);const cv=b.querySelector('canvas');renderScene(cv.getContext('2d'),cv,new C.Game(i),0,true);});dialogOpen('stageDialog');
  }
  // Some touch browsers omit the compatibility click just after a swipe.
  // Activate real taps on pointerup, cancel drags, suppress only their duplicate click.
@@ -264,7 +260,7 @@
  document.addEventListener('click',e=>{
   if(e.isTrusted&&(e.pointerType==='touch'||e.detail>0)&&lastTap&&performance.now()-lastTap.time<650&&e.target.closest('button')===lastTap.b){e.preventDefault();e.stopImmediatePropagation();}
  },true);
- $('newRoomsBtn').onclick=()=>load(16);$('stagesBtn').onclick=stagePicker;$('helpBtn').onclick=()=>dialogOpen('helpDialog');$('hintBtn').onclick=()=>{dialogOpen('helpDialog');$('hintText').scrollIntoView({block:'center'});};
+ $('newRoomsBtn').onclick=()=>load(14);$('stagesBtn').onclick=stagePicker;$('helpBtn').onclick=()=>dialogOpen('helpDialog');$('hintBtn').onclick=()=>{dialogOpen('helpDialog');$('hintText').scrollIntoView({block:'center'});};
  document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>closeDialog(b.closest('dialog')));$('nextBtn').onclick=()=>game.index===C.LEVELS.length-1?stagePicker():load(game.index+1);$('replayBtn').onclick=()=>load(game.index);
  function keyTick(time){
   if(!keys.size){keyFrame=0;return;}const dt=Math.min(.035,(time-keyTime)/1000||.016);keyTime=time;
@@ -277,6 +273,6 @@
  window.addEventListener('keyup',e=>{keys.delete(e.key.toLowerCase());if(!keys.size&&active?.type==='keyboard')stopInput();});
  window.addEventListener('blur',stopInput);document.addEventListener('visibilitychange',()=>{if(document.hidden)stopInput();});window.addEventListener('pagehide',()=>{stopInput();save();});window.addEventListener('resize',()=>{stopInput();fitBoard();});if(window.visualViewport)window.visualViewport.addEventListener('resize',fitBoard);if(window.ResizeObserver)new ResizeObserver(fitBoard).observe($('boardStage'));
  // Read-only QA surface: test tools cannot mutate live game state through it.
- window.ShadowMorph=Object.freeze({version:'8.0.0',snapshot:()=>({index:game.index,...game.snapshot(),historyLength:game.history.length,fine,storageOK,active:active?.type||null,ready:$('boardShell').classList.contains('ready')}),levels:()=>C.LEVELS.map(l=>({id:l.id,name:l.name,tag:l.tag}))});
- try{const entry=Number(new URLSearchParams(location.search).get('stage'));if(Number.isInteger(entry)&&entry>=1&&entry<=C.LEVELS.length)game.load(entry-1);save();sync();fitBoard();requestAnimationFrame(fitBoard);if(game.state.won)showWin();}catch(e){fail(e);}
+ window.ShadowMorph=Object.freeze({version:'7.1.0',snapshot:()=>({index:game.index,...game.snapshot(),historyLength:game.history.length,fine,storageOK,active:active?.type||null,ready:$('boardShell').classList.contains('ready')}),levels:()=>C.LEVELS.map(l=>({id:l.id,name:l.name,tag:l.tag}))});
+ try{save();sync();fitBoard();requestAnimationFrame(fitBoard);if(game.state.won)showWin();}catch(e){fail(e);}
 })();

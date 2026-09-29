@@ -1,4 +1,4 @@
-const test=require('node:test'),assert=require('node:assert/strict'),C=require('../src/core.js'),legacy=require('./legacy-levels.cjs');
+const test=require('node:test'),assert=require('node:assert/strict'),C=require('./v7-core.cjs'),legacy=require('./legacy-levels.cjs');
 const gesture=(g,f)=>{g.begin();const r=f();g.end();return r;};
 test('V7 preserves all fourteen original room objects and appends five new rooms',()=>{assert.deepEqual(C.LEVELS.slice(0,14),legacy);assert.equal(C.LEVELS.length,19);});
 test('new rooms have no invisible numbered conditions, valid deck geometry and start on land',()=>{

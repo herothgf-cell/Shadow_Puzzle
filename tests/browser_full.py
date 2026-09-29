@@ -1,12 +1,12 @@
+import os
 """Exercises the shipped inline HTML through real DOM controls.
 No app state setters or solver shortcuts are used; snapshot is read-only.
 Runs from in-memory HTML because this sandbox's Chromium blocks URL navigation.
 """
 from pathlib import Path
-import os
 from playwright.sync_api import sync_playwright
 import json, math, traceback
-P=Path(__file__).resolve().parents[1];HTML=(P/'site-ready/index.html').read_text();report=[]
+P=Path(__file__).resolve().parents[1];HTML=(P/'qa/legacy-v7/index.html').read_text();report=[]
 
 def check(name,value,detail=None):
  if not value: raise AssertionError(f'{name}: {detail}')
@@ -71,7 +71,7 @@ def route(page,steps):
   elif a[0]=='select':page.locator(f'[data-light="{a[1]}"]').click()
 
 with sync_playwright() as p:
- browser=p.chromium.launch(**({'executable_path':os.environ['BROWSER_EXECUTABLE']} if os.getenv('BROWSER_EXECUTABLE') else {}),args=['--no-sandbox'])
+ browser=p.chromium.launch(executable_path=os.environ.get('BROWSER_EXECUTABLE'),args=['--no-sandbox'])
  try:
   for w,h in [(390,844),(360,640),(844,390),(1280,900)]:
    context,page,errors=boot(browser,w,h)

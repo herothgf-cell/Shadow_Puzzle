@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
-const C=require('../src/core.js'),solutions=require('./solutions.json');
+const C=require('./v7-core.cjs'),solutions=require('./solutions.json');
 function step(g,action){
  g.begin();const [kind,a,b,c]=action;
  if(kind==='select')g.selectShadow(a);

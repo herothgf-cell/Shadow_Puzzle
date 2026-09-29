@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const C = require('../src/core.js');
+const C = require('./v7-core.cjs');
 
 for (const index of [14, 15, 16, 17]) {
   test(`room ${index + 1}: reload preserves an explicitly selected box instead of the default deck`, () => {

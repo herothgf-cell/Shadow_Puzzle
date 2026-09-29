@@ -1,33 +1,24 @@
-# Web verification
+# 40-room web verification
 
-## Local prerequisites
-- Node.js 22 or newer (runtime/build has no npm dependencies)
-- Python 3.11+ for browser tests
+Run `npm test` then `npm run build`. Browser tests use Python Playwright from `requirements-dev.txt`.
 
 ```sh
-npm run build
-npm test
 python -m pip install -r requirements-dev.txt
 python -m playwright install --with-deps chromium webkit firefox
-mkdir -p qa
-npm run test:browser
 python tests/hosting_browser.py --engine chromium
 python tests/hosting_browser.py --engine webkit
 python tests/hosting_browser.py --engine firefox
+npm run test:browser
 ```
 
-The hosted tests start a temporary HTTP server automatically. `--base-url` checks a published site. `--smoke` limits campaign traversal to rooms 1, 15 and 19 but retains PC keyboard, storage reload and layout checks.
+`hosting_browser.py` starts its own temporary HTTP server. `--base-url` uses the actual published HTTPS origin. `--smoke` replays rooms 1,17,26,33,39,40 plus the alternate room39 route and a PC room26 route, retaining storage, keyboard and layout checks. Full mode replays all40 plus PC17/26/33/40.
 
-`--fixture` is only for sandboxes that disallow browser navigation. It uses in-memory HTML, does not prove HTTP or persistent-origin storage, and is never used in CI.
+`--fixture` is only for local sandboxes which prohibit URL navigation. It loads the same built HTML in memory and deliberately skips persistent-origin reload/migration checks. CI never uses this option. `--from-stage` resumes a local diagnostic run only; CI full runs do not use it.
 
-## Coverage
-- 19 levels through the collision engine and actual browser button/pad gestures.
-- Compact 320x568, 360x640, phone 393x852, landscape 844x390, tablet 768x1024, PC 1365x768 and 1920x1080.
-- Square visible canvas, separate controls, PC direction keys/A/D/Z/R, native Chromium touch then immediate tap.
-- Deck target selection, gates, undo, orientation changes, reload storage, denied storage and disabled JavaScript.
-- All previous V7 tests are retained.
+All input follows real buttons, pointer events or keyboard events. The read-only snapshot surface observes state. Browser witness points on fixed-light axes are projected onto the actual radial line within 12 world units to account for integer CSS coordinates; arbitrary off-axis targets are rejected. Engine witnesses use exact authored coordinates. Final success always requires the unchanged game win condition.
 
-WebKit on Linux is browser-engine coverage, not a physical iPhone Safari test. Native iOS/Android touch latency and battery use still need physical devices.
+Screen sizes include 320×568, 360×640, 393×852, 844×390, 768×1024, 1365×768 and 1920×1080. Tests cover the combined deck/light selector, square map visibility, direction keys, A/D, Z/R, touch then immediate tap (Chromium), orientation, reload and blocked storage.
 
-## Migration
-V7 level data and core simulation are unchanged from the supplied V7 package. Changes are hosting/build identity, compact-phone layout and portable test tooling. The browser key stays `shadow-morph-v7-platforms`. Saved games from an HTML attachment, a different host or a different browser cannot automatically migrate to the new site's origin.
+The original V7 UI checks run against `qa/legacy-v7/index.html` produced from archived UI/levels and the active physics engine. They cannot accidentally test the new campaign under obsolete room numbers. They do not replace active40 checks.
+
+Browser automation does not constitute physical iPhone/Galaxy testing. WebKit on Linux covers the engine, not every Safari device/browser UI; Firefox uses desktop input contexts at the same small sizes.

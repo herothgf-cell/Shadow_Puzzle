@@ -1,9 +1,9 @@
+import os
 """V7 UI regressions: DOM input, native Chromium touch, storage fixtures, no live-state setters."""
 from pathlib import Path
-import os
 from playwright.sync_api import sync_playwright
 import json,math
-P=Path(__file__).resolve().parents[1];HTML=(P/'site-ready/index.html').read_text();report=[]
+P=Path(__file__).resolve().parents[1];HTML=(P/'qa/legacy-v7/index.html').read_text();report=[]
 def check(name,ok,detail=None):
  if not ok:raise AssertionError(f'{name}: {detail}')
  report.append({'check':name,'pass':True,'detail':detail});print('PASS',name,flush=True)
@@ -36,7 +36,7 @@ def box_to(p,x,y):
 
 def preset(p,val):p.locator(f'[data-aspect="{val}"]').click()
 with sync_playwright() as pw:
- b=pw.chromium.launch(**({'executable_path':os.environ['BROWSER_EXECUTABLE']} if os.getenv('BROWSER_EXECUTABLE') else {}),args=['--no-sandbox'])
+ b=pw.chromium.launch(executable_path=os.environ.get('BROWSER_EXECUTABLE'),args=['--no-sandbox'])
  try:
   c,p,err=boot(b);p.locator('#newRoomsBtn').click();p.wait_for_timeout(50)
   check('15+ opens first new room without replaying old rooms',snap(p)['index']==14)
@@ -92,7 +92,7 @@ with sync_playwright() as pw:
   c,p,err=boot(b,stored=stored);check('played deck length and target restore across reload',snap(p)['state']==played['state'] and snap(p)['target']==played['target'] and snap(p)['index']==played['index']);c.close()
   # Legacy same-room migration; the original storage record remains byte-identical.
   import subprocess
-  js="const C=require('./src/core.js'),g=new C.Game(8);let v=g.serialize();v.version=6;delete v.target;delete v.state.platforms;console.log(JSON.stringify({game:v,completed:[0,1,2],fine:true}));"
+  js="const C=require('./tests/v7-core.cjs'),g=new C.Game(8);let v=g.serialize();v.version=6;delete v.target;delete v.state.platforms;console.log(JSON.stringify({game:v,completed:[0,1,2],fine:true}));"
   legacy=subprocess.check_output(['node','-e',js],cwd=P,text=True).strip()
   c,p,err=boot(b,stored={'shadow-morph-v6-rebuild':legacy});check('V6 room9 progress migrates into V7',snap(p)['index']==8 and snap(p)['fine']);check('legacy storage key is never overwritten',p.evaluate('window.__stored["shadow-morph-v6-rebuild"]')==legacy);c.close()
   for w,h in [(360,640),(390,844),(844,390)]:

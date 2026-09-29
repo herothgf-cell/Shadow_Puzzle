@@ -1,11 +1,11 @@
+import os
 """When player and deck shadows overlap, the explicitly selected target wins."""
 from pathlib import Path
-import os
 from playwright.sync_api import sync_playwright
 P=Path(__file__).resolve().parents[1]
 with sync_playwright() as pw:
- b=pw.chromium.launch(**({'executable_path':os.environ['BROWSER_EXECUTABLE']} if os.getenv('BROWSER_EXECUTABLE') else {}),args=['--no-sandbox'])
- p=b.new_page(viewport={'width':390,'height':844});p.set_content((P/'site-ready/index.html').read_text());p.wait_for_function('window.ShadowMorph&&ShadowMorph.snapshot().ready')
+ b=pw.chromium.launch(executable_path=os.environ.get('BROWSER_EXECUTABLE'),args=['--no-sandbox'])
+ p=b.new_page(viewport={'width':390,'height':844});p.set_content((P/'qa/legacy-v7/index.html').read_text());p.wait_for_function('window.ShadowMorph&&ShadowMorph.snapshot().ready')
  p.locator('#newRoomsBtn').click();p.locator('[data-aspect="4"]').click();p.locator('[data-target="box"]').click()
  r=p.locator('#touchpad').bounding_box();x=r['x']+r['width']/2;y=r['y']+r['height']/2
  p.mouse.move(x,y);p.mouse.down();p.mouse.move(x+280*1.5/3.2,y);p.mouse.up()

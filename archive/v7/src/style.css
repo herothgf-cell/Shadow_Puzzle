@@ -28,10 +28,3 @@ dialog{width:min(440px,calc(100% - 28px));max-height:calc(100dvh - 36px);border:
  .status-line{font-size:10px;min-height:25px}
  .app{padding-top:calc(6px + env(safe-area-inset-top));padding-bottom:calc(6px + env(safe-area-inset-bottom))}
 }
-
-/* Existing light selection remains available beside deck selection. */
-.mode-row.lights-only{justify-content:flex-end;margin-top:-3px;margin-bottom:6px}
-.mode-row.lights-only .light-selector:before{content:"상자 그림자 / 빛";align-self:center;font-size:10px;color:var(--muted);padding-right:8px}
-.object-selector{flex-wrap:wrap}
-@media(max-width:499px) and (max-height:710px){.mode-row.lights-only .light-selector:before{font-size:9px}.object-caption{display:none}.legend{display:none}}
-@media(min-width:500px) and (orientation:landscape) and (max-height:550px){.control-panel .legend{display:none}.mode-row.lights-only{margin-bottom:5px}.control-panel .control-note{display:none}}

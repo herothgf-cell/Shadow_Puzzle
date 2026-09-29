@@ -247,13 +247,9 @@
     }
     serialize(){return {version:7,levelId:this.level.id,index:this.index,...this.snapshot()};}
     restore(data){
-      if(!data||![6,7].includes(data.version)||typeof data.levelId!=='string')return false;
-      // Campaign numbers can change; only an unchanged, stable room ID can
-      // carry geometry-dependent progress into the reordered campaign.
-      const index=LEVELS.findIndex(l=>l.id===data.levelId);
-      if(index<0)return false;
-      if(data.version===6&&(LEVELS[index].platforms||[]).length)return false;
-      const candidate=new Game(index),s=data.state;
+      if(!data||![6,7].includes(data.version)||!Number.isInteger(data.index)||!LEVELS[data.index]||data.levelId!==LEVELS[data.index].id)return false;
+      if(data.version===6&&(LEVELS[data.index].platforms||[]).length)return false;
+      const candidate=new Game(data.index),s=data.state;
       if(!s||![s.x,s.y,s.a].every(Number.isFinite)||!Number.isInteger(s.moves)||s.moves<0)return false;
       candidate.state={...initial(candidate.level),x:s.x,y:s.y,a:s.a,moves:s.moves};
       if(!candidate.level.allowMorph&&Math.abs(s.a-1)>EPS)return false;

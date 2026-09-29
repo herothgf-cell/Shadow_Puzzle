@@ -5,7 +5,7 @@ const root = __dirname;
 const read = p => fs.readFileSync(path.join(root, p), 'utf8');
 const pkg = JSON.parse(read('package.json'));
 let html = read('src/shell.html');
-for (const [token, file] of [['STYLES', 'style.css'], ['LEVELS', 'levels.js'], ['CORE', 'core.js'], ['UI', 'ui.js']]) {
+for (const [token, file] of [['STYLES', 'style.css'], ['LEVELS', 'levels.js'], ['CORE', 'core.js'], ['PROGRESS', 'progress.js'], ['UI', 'ui.js']]) {
   const marker = `/* ${token} */`;
   if (html.split(marker).length !== 2) throw new Error(`Expected exactly one ${marker}`);
   html = html.replace(marker, () => read(`src/${file}`));
@@ -20,5 +20,5 @@ fs.writeFileSync(path.join(out, 'version.json'), JSON.stringify({
   commit: process.env.GITHUB_SHA || 'local',
   stages: require('./src/levels.js').length
 }, null, 2) + '\n');
-fs.writeFileSync(path.join(root, 'shadow_morph_v7_platforms.html'), html);
-console.log(`Built V${pkg.version}: ${Buffer.byteLength(html)} bytes, 19 stages.`);
+fs.writeFileSync(path.join(root, 'shadow_morph_v8_campaign40.html'), html);
+console.log(`Built V${pkg.version}: ${Buffer.byteLength(html)} bytes, ${require('./src/levels.js').length} stages.`);

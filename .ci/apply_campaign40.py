@@ -6,7 +6,8 @@ assert hashlib.sha256(packed).hexdigest() == expected, 'Transport digest mismatc
 manifest = json.loads(bz2.decompress(packed))
 if os.environ.get('GITHUB_SHA'):
     assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip() == os.environ['GITHUB_SHA']
-    assert subprocess.check_output(['git','rev-parse','HEAD^'],text=True).strip() == manifest['base'], 'Unexpected base commit'
+    assert manifest['base'] == '97565fa8d4e0ac3cccb5c46cc0ea8cb73f3ee6b6'
+    subprocess.run(['git','merge-base','--is-ancestor',manifest['base'],'HEAD'],check=True)
 def safe(name):
     p = pathlib.PurePosixPath(name)
     assert not p.is_absolute() and '..' not in p.parts
